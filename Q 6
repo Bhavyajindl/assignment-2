@@ -1,0 +1,165 @@
+#include <iostream>
+using namespace std;
+
+// Structure for sparse matrix in triplet form
+struct Sparse {
+    int row, col, val;
+};
+
+// Function to read sparse matrix
+void readSparse(Sparse sp[], int &rows, int &cols, int &terms) {
+    cout << "Enter rows and columns of matrix: ";
+    cin >> rows >> cols;
+    cout << "Enter number of non-zero elements: ";
+    cin >> terms;
+    sp[0].row = rows;
+    sp[0].col = cols;
+    sp[0].val = terms;
+
+    cout << "Enter (row, col, value) for each non-zero element:\n";
+    for (int i = 1; i <= terms; i++)
+        cin >> sp[i].row >> sp[i].col >> sp[i].val;
+}
+
+// Function to display sparse matrix
+void display(Sparse sp[]) {
+    int terms = sp[0].val;
+    cout << "\nRow\tCol\tVal\n";
+    for (int i = 0; i <= terms; i++)
+        cout << sp[i].row << "\t" << sp[i].col << "\t" << sp[i].val << endl;
+}
+
+// (a) Transpose of Sparse Matrix
+void transpose(Sparse a[], Sparse b[]) {
+    b[0].row = a[0].col;
+    b[0].col = a[0].row;
+    b[0].val = a[0].val;
+
+    int k = 1;
+    for (int i = 0; i < a[0].col; i++) {
+        for (int j = 1; j <= a[0].val; j++) {
+            if (a[j].col == i) {
+                b[k].row = a[j].col;
+                b[k].col = a[j].row;
+                b[k].val = a[j].val;
+                k++;
+            }
+        }
+    }
+}
+
+// (b) Addition of Two Sparse Matrices
+void add(Sparse a[], Sparse b[], Sparse c[]) {
+    if (a[0].row != b[0].row || a[0].col != b[0].col) {
+        cout << "Addition not possible!\n";
+        return;
+    }
+
+    c[0].row = a[0].row;
+    c[0].col = a[0].col;
+    int t1 = a[0].val, t2 = b[0].val, i = 1, j = 1, k = 1;
+
+    while (i <= t1 && j <= t2) {
+        if (a[i].row < b[j].row ||
+            (a[i].row == b[j].row && a[i].col < b[j].col))
+            c[k++] = a[i++];
+        else if (b[j].row < a[i].row ||
+                 (b[j].row == a[i].row && b[j].col < a[i].col))
+            c[k++] = b[j++];
+        else {
+            c[k].row = a[i].row;
+            c[k].col = a[i].col;
+            c[k].val = a[i].val + b[j].val;
+            i++;
+            j++;
+            k++;
+        }
+    }
+    while (i <= t1) c[k++] = a[i++];
+    while (j <= t2) c[k++] = b[j++];
+
+    c[0].val = k - 1;
+}
+
+// (c) Multiplication of Two Sparse Matrices
+void multiply(Sparse a[], Sparse b[], Sparse c[]) {
+    if (a[0].col != b[0].row) {
+        cout << "Multiplication not possible!\n";
+        return;
+    }
+
+    Sparse bt[50];
+    transpose(b, bt);  // Transpose for easy column access
+
+    int k = 1;
+    c[0].row = a[0].row;
+    c[0].col = b[0].col;
+    for (int i = 0; i < a[0].row; i++) {
+        for (int j = 0; j < bt[0].row; j++) {
+            int sum = 0;
+            for (int p = 1; p <= a[0].val; p++) {
+                if (a[p].row == i) {
+                    for (int q = 1; q <= bt[0].val; q++) {
+                        if (bt[q].row == j && a[p].col == bt[q].col)
+                            sum += a[p].val * bt[q].val;
+                    }
+                }
+            }
+            if (sum != 0) {
+                c[k].row = i;
+                c[k].col = j;
+                c[k].val = sum;
+                k++;
+            }
+        }
+    }
+    c[0].val = k - 1;
+}
+
+// Main Program
+int main() {
+    Sparse a[50], b[50], c[50];
+    int rows, cols, terms;
+    int choice;
+
+    cout << "\n--- Sparse Matrix Operations ---\n";
+    readSparse(a, rows, cols, terms);
+
+    do {
+        cout << "\n1. Display Matrix\n2. Transpose\n3. Addition\n4. Multiplication\n0. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                display(a);
+                break;
+            case 2:
+                transpose(a, b);
+                cout << "\nTranspose:\n";
+                display(b);
+                break;
+            case 3:
+                cout << "\nEnter 2nd Matrix for Addition:\n";
+                readSparse(b, rows, cols, terms);
+                add(a, b, c);
+                cout << "\nResultant Matrix (A + B):\n";
+                display(c);
+                break;
+            case 4:
+                cout << "\nEnter 2nd Matrix for Multiplication:\n";
+                readSparse(b, rows, cols, terms);
+                multiply(a, b, c);
+                cout << "\nResultant Matrix (A × B):\n";
+                display(c);
+                break;
+            case 0:
+                cout << "Exiting...\n";
+                break;
+            default:
+                cout << "Invalid choice!\n";
+        }
+    } while (choice != 0);
+
+    return 0;
+}
